@@ -1,9 +1,8 @@
+import tensorflow as tf
 import numpy as np
 import struct
 from array import array
 from os.path  import join
-import matplotlib.pyplot as plt
-import tensorflow as tf
 
 # MNIST Data Loader Class
 class MnistDataloader(object):
@@ -55,28 +54,15 @@ mnist_dataloader = MnistDataloader(training_images_filepath, training_labels_fil
 (x_train, y_train), (x_test, y_test) = mnist_dataloader.load_data()
 
 x_test_mod = np.array(x_test)
-x_train_mod = np.array(x_train)
 
 y_test_mod = np.array(y_test)
-y_train_mod = np.array(y_train)
 
 x_test_mod = np.reshape(x_test_mod, (x_test_mod.shape[0], x_test_mod.shape[1]*x_test_mod.shape[2]))
-x_train_mod = np.reshape(x_train_mod, (x_train_mod.shape[0], x_train_mod.shape[1]*x_train_mod.shape[2]))
 
 # Normalize the pixel values
-x_train_mod = x_train_mod/255
 x_test_mod = x_test_mod/255
 
 # Hot-encode the y values
-y_train_mod = np.zeros((y_train_mod.shape[0], 10))
-
-for index in range(0, y_train_mod.shape[0]):
-    hot_encode_vect = np.zeros(10)
-
-    hot_encode_vect[y_train[index]] = 1
-
-    y_train_mod[index] = hot_encode_vect
-
 y_test_mod = np.zeros((y_test_mod.shape[0], 10))    
 
 for index in range(0, y_test_mod.shape[0]):
@@ -87,47 +73,10 @@ for index in range(0, y_test_mod.shape[0]):
     y_test_mod[index] = hot_encode_vect
 
 
-batch_size = 512
-epochs = 25
-learning_rate = 0.15
+model = tf.keras.models.load_model("model.keras")
 
-# Creating the model
-model = tf.keras.Sequential()
-model.add(tf.keras.Input(shape=(784, )))
-model.add(tf.keras.layers.Dense(32, activation="relu"))
-model.add(tf.keras.layers.Dense(128, activation="relu"))
-model.add(tf.keras.layers.Dense(10, activation="softmax"))
+y_pred = model.predict(x_test_mod)
 
-model.compile(optimizer=tf.keras.optimizers.SGD(learning_rate=learning_rate), 
-              loss= tf.keras.losses.CategoricalCrossentropy(),
-              metrics=['accuracy'])
+loss, accuracy = model.evaluate(x_test_mod, y_test_mod)
 
-model.summary()
-
-# Training the model
-history = model.fit(x=x_train_mod, 
-                    y=y_train_mod, 
-                    batch_size=batch_size, 
-                    epochs=epochs, 
-                    validation_split=0.2)
-
-
-acc = history.history['accuracy']
-val_acc = history.history['val_accuracy']
-
-loss = history.history['loss']
-val_loss = history.history['val_loss']
-
-plt.figure(figsize=(10, 5))
-plt.subplot(2, 1, 1)
-plt.plot(loss, label="Loss")
-plt.title("Loss Reduction")
-
-plt.subplot(2, 1, 2)
-plt.plot(val_acc, label='val_accuracy')
-plt.title("Value Accuracy")
-
-plt.show()
-
-# Save the model in the current directory
-model.save("model.keras")
+print(f"The accuracy of the model is : {round(accuracy*100, 2)}%")
